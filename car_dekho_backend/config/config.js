@@ -7,4 +7,5 @@ const prisma = new PrismaClient();
 
 console.log("Prisma Client Created");
 
+
 export default prisma;
