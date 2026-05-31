@@ -2,11 +2,14 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
-
-RUN npm install --include=dev
+RUN pwd
 
 COPY . .
+
+RUN ls -la
+RUN find . -name package.json
+
+RUN npm install
 
 RUN npx prisma generate
 
