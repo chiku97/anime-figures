@@ -12,7 +12,7 @@ const ContactForm = ({ car, onClose, onSuccess }) => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:5000/api/v1";
+  const API_BASE = import.meta.env.VITE_API_BASE || "https://p01--car-dekho-backend--bmxsljx79zw4.code.run//api/v1";
 
   const handleChange = (e) => {
     const { name, value } = e.target;

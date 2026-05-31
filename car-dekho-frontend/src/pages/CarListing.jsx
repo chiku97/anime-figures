@@ -3,7 +3,7 @@ import CarCard from '../components/CarCard'
 import FilterBar from '../components/FilterBar'
 import './CarListing.css'
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:5000/api/v1'
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://p01--car-dekho-backend--bmxsljx79zw4.code.run/api/v1'
 const PAGE_LIMIT = 12
 
 function CarListing() {
