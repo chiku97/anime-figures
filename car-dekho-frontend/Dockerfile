@@ -2,10 +2,10 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY car-dekho-frontend/package*.json ./
 RUN npm install
 
-COPY . .
+COPY car-dekho-frontend .
 
 ARG VITE_API_BASE=http://localhost:5000/api/v1
 ENV VITE_API_BASE=${VITE_API_BASE}
