@@ -18,8 +18,8 @@ services:
 
   backend:
     build:
-      context: ./car_dekho_backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: car_dekho_backend/Dockerfile
     container_name: car_dekho_backend
     restart: unless-stopped
     depends_on:
@@ -34,8 +34,8 @@ services:
 
   frontend:
     build:
-      context: ./car-dekho-frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: car-dekho-frontend/Dockerfile
       args:
         VITE_API_BASE: https://p01--car-dekho-backend--bmxsljx79zw4.code.run//api/v1
     container_name: car_dekho_frontend
