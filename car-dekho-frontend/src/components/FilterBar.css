@@ -1,0 +1,150 @@
+.filter-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #fff;
+  border-bottom: 1px solid #e5e4e7;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  padding: 12px 24px;
+}
+
+.filter-bar__inner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.filter-input,
+.filter-select {
+  height: 38px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0 12px;
+  font-size: 14px;
+  background: #f9fafb;
+  color: #374151;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.filter-input:focus,
+.filter-select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+  background: #fff;
+}
+
+.filter-input--search {
+  flex: 1;
+  min-width: 180px;
+}
+
+.filter-input--price {
+  width: 90px;
+}
+
+.filter-select {
+  cursor: pointer;
+}
+
+.filter-price-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filter-price-sep {
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.filter-reset-btn {
+  height: 38px;
+  padding: 0 18px;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+
+.filter-reset-btn:hover {
+  background: #4f46e5;
+}
+
+.filter-ai-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1 1 100%;
+  margin-top: 6px;
+}
+
+.filter-input--ai {
+  flex: 1;
+  min-width: 280px;
+}
+
+.filter-ai-btn {
+  height: 38px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 8px;
+  background: #0f766e;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+}
+
+.filter-ai-btn:hover {
+  background: #0d5f59;
+}
+
+@media (max-width: 768px) {
+  .filter-ai-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-input--ai {
+    min-width: 100%;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  .filter-bar {
+    background: #1e1f2b;
+    border-bottom-color: #2e303a;
+  }
+
+  .filter-input,
+  .filter-select {
+    background: #2a2b38;
+    border-color: #3e404f;
+    color: #e5e7eb;
+  }
+
+  .filter-input:focus,
+  .filter-select:focus {
+    background: #2e2f3e;
+    border-color: #818cf8;
+  }
+
+  .filter-ai-btn {
+    background: #0d9488;
+  }
+
+  .filter-ai-btn:hover {
+    background: #0b7f76;
+  }
+}

@@ -1,0 +1,162 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+// downgraded prisma version to 6.15 since the new node 20 and 22 version is not compatible with it
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url = env("DATABASE_URL")
+}
+
+enum FuelType {
+  PETROL
+  DIESEL
+  ELECTRIC
+  CNG
+  HYBRID
+}
+
+enum BodyType {
+    HATCHBACK
+    SEDAN
+    SUV
+    MUV
+    COUPE
+    CONVERTIBLE
+}
+
+enum TransmissionPreference {
+  MANUAL
+  AUTOMATIC
+}
+
+enum UsageType {
+  CITY
+  HIGHWAY
+  MIXED
+}
+
+enum SearchPriority {
+  MILEAGE
+  SAFETY
+  PERFORMANCE
+  COMFORT
+  LOW_MAINTAINANCE
+  RESALE_VALUE
+}
+
+model Car {
+  id String @id @default(uuid())
+  maker String
+  model String
+  varient String
+  bodyType String
+  fuelType String
+  year Int?
+  transmission String
+  exShowRoomPrice Float?
+  mileage Float?
+  engineCC Float?
+  powerBhp Float?
+  torqueNm Float?
+  seatCapacity Int?
+  safetyRating Float?
+  imageUrl String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  recommendationCars RecommendationCars[]
+  carReviews Review[]
+  carFeatures CarFeature[]
+  contactRequests ContactRequest[]
+  @@index([maker])
+  @@index([model])
+  @@index([bodyType])
+  @@index([fuelType])
+  @@index([exShowRoomPrice])
+
+}
+
+model CarFeature {
+
+  id String @id @default(uuid())
+  carId String
+  car Car @relation(fields: [carId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id String @id @default(uuid())
+  carId String
+  car Car @relation(fields: [carId], references: [id], onDelete: Cascade)
+
+  reviewerName String
+  rating  Float?
+  reviewText String
+  created_at DateTime @default(now())
+
+  @@index([carId])
+  @@index([rating])
+}
+
+model Recommendation {
+  id String @id @default(uuid())
+  searchId String
+  search UserSearch @relation(fields: [searchId], references : [id])
+  aiReasoning String
+  confidenceScore String
+  created_at DateTime @default(now())
+  recommendationCars RecommendationCars[]
+  @@index([searchId])
+}
+
+model RecommendationCars {
+  id String @id @default(uuid())
+  recommendationId String
+  recommendation Recommendation @relation(fields: [recommendationId], references: [id])
+  carId String
+  car Car @relation(fields: [carId], references: [id], onDelete: Cascade)
+  rank String?
+  Score Float?
+
+  @@unique([recommendationId, carId])
+}
+
+model UserSearch {
+  id String @id @default(uuid())
+  sessionId String
+  budget Int?
+  familySize Int?
+  fuelPreference FuelType?
+  bodyPreference BodyType?
+  transmissionPreference TransmissionPreference?
+  usageType UsageType?
+  priority SearchPriority?
+
+  userPrompt String
+
+  created_at DateTime @default(now())
+  recommendations Recommendation[]
+  @@index([sessionId])
+
+}
+
+model ContactRequest {
+  id String @id @default(uuid())
+  carId String
+  car Car @relation(fields: [carId], references: [id], onDelete: Cascade)
+  
+  name String
+  email String
+  phone String
+  message String?
+  
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@index([carId])
+  @@index([email])
+}

@@ -1,0 +1,32 @@
+{
+  "name": "car_dekho_package",
+  "version": "1.0.0",
+  "description": "Assignment for car dekho ",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon index.js",
+    "start": "node index.js",
+    "seed": "node ./prisma/seed/seed.js || node ./prisma/seed/seed,js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chiku97/car_dekho_backend.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/chiku97/car_dekho_backend/issues"
+  },
+  "homepage": "https://github.com/chiku97/car_dekho_backend#readme",
+  "dependencies": {
+    "@prisma/client": "^6.15.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "nodemon": "^3.1.14",
+    "prisma": "^6.15.0",
+    "uuid": "^14.0.0"
+  }
+}
