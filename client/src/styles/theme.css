@@ -1,0 +1,36 @@
+/* src/styles/theme.css */
+:root {
+  /* Primary palette */
+  --color-warm-white: #FAF9F6; /* Background */
+  --color-primary-charcoal: #1F1F1F; /* Main text, headers */
+  --color-accent-sage: #A8B8A2; /* Buttons, accents */
+  --color-luxury-gold: #C9A227; /* Premium labels, offers */
+  --color-secondary-warm-grey: #8A8A8A; /* Secondary text */
+
+  /* Additional palette */
+  --color-linen: #F7F4EF;
+  --color-sage: #A6B39B;
+  --color-clay: #B97A57;
+  --color-walnut: #6B4F3A;
+  --color-charcoal: #2D2D2D;
+
+  /* UI elements */
+  --navbar-bg: #000000; /* Matte Black */
+  --footer-bg: #000000; /* Matte Black */
+  --button-bg: var(--color-sage);
+  --cta-bg: var(--color-clay);
+  --heading-color: var(--color-walnut);
+  --body-text-color: var(--color-charcoal);
+  --card-bg: #FFFFFF;
+  --card-radius: 0.5rem;
+}
+
+/* Utility classes */
+.bg-warm-white { background-color: var(--color-warm-white); }
+.text-primary { color: var(--color-primary-charcoal); }
+.text-secondary { color: var(--color-secondary-warm-grey); }
+.text-heading { color: var(--heading-color); }
+.text-body { color: var(--body-text-color); }
+.btn-primary { background-color: var(--button-bg); color: #fff; }
+.btn-cta { background-color: var(--cta-bg); color: #fff; }
+.card { background-color: var(--card-bg); border-radius: var(--card-radius); }
