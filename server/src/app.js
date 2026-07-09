@@ -459,7 +459,7 @@ const verifyFirebaseIdToken = async (idToken) => {
         console.warn(`[DEV] Certificate not found for kid "${decoded.header.kid}". Falling back to decoded payload.`);
         return decoded.payload;
       }
-      throw new Error('Matching public key certificate not found.');
+      throw new Error(`Matching public key certificate not found for kid: ${decoded.header.kid}. Available keys: ${Object.keys(keys || {}).join(', ')}`);
     }
 
     const verifiedPayload = jwt.verify(idToken, key, {
