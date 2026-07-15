@@ -5,7 +5,8 @@ import {
   ArrowLeft, Plus, Edit2, Trash2, Save, X, Database, 
   WifiOff, Package, Sparkles, RefreshCw, AlertTriangle,
   Clock, ShoppingBag, User, Mail, Phone, MapPin, Truck,
-  ChevronDown, ChevronUp, ExternalLink
+  ChevronDown, ChevronUp, ExternalLink, Upload
+
 } from 'lucide-react';
 import { addToast } from '../../store/toastSlice.js';
 import apiClient from '../../api/client.js';
@@ -41,6 +42,41 @@ const AdminDashboard = () => {
   const [stock, setStock] = useState('');
   const [imageInput, setImageInput] = useState('');
   const [badgeInput, setBadgeInput] = useState('');
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Convert file to base64
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = async () => {
+      const base64data = reader.result;
+      
+      setUploadingImage(true);
+      try {
+        const response = await apiClient.post('/api/admin/upload-image', { image: base64data });
+        if (response.data.success) {
+          const uploadedUrl = response.data.url;
+          setImageInput(prev => {
+            const trimmed = prev ? prev.trim() : '';
+            if (!trimmed) return uploadedUrl;
+            return trimmed.endsWith(',') ? `${trimmed} ${uploadedUrl}` : `${trimmed}, ${uploadedUrl}`;
+          });
+          dispatch(addToast({ message: 'Image uploaded successfully!', type: 'success' }));
+        } else {
+          dispatch(addToast({ message: response.data.message || 'Image upload failed.', type: 'error' }));
+        }
+      } catch (err) {
+        console.error('Image upload error:', err);
+        dispatch(addToast({ message: err.response?.data?.message || 'Failed to upload image.', type: 'error' }));
+      } finally {
+        setUploadingImage(false);
+      }
+    };
+  };
+
 
   // Fetch all products
   const fetchProducts = async () => {
@@ -758,9 +794,22 @@ const AdminDashboard = () => {
               </div>
 
               <div className="space-y-1">
-                <label className="block text-xs uppercase font-extrabold tracking-wider text-secondary">
-                  Image URLs (comma separated)
-                </label>
+                <div className="flex justify-between items-center">
+                  <label className="block text-xs uppercase font-extrabold tracking-wider text-secondary">
+                    Image URLs (comma separated)
+                  </label>
+                  <label className="cursor-pointer text-xs font-extrabold text-accent hover:text-opacity-80 flex items-center gap-1 transition-colors">
+                    <Upload className="w-3.5 h-3.5" />
+                    {uploadingImage ? 'Uploading...' : 'Choose from Gallery'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploadingImage}
+                      className="hidden"
+                    />
+                  </label>
+                </div>
                 <textarea
                   rows={2}
                   placeholder="https://images.unsplash.com/photo-..."
@@ -768,7 +817,13 @@ const AdminDashboard = () => {
                   onChange={e => setImageInput(e.target.value)}
                   className="w-full px-4 py-2.5 rounded-lg bg-white border border-gray-300 text-primary focus:outline-none focus:border-accent font-mono text-xs placeholder:text-gray-400"
                 />
+                {uploadingImage && (
+                  <p className="text-[10px] text-accent animate-pulse font-medium">
+                    Uploading selected image directly to Cloudinary...
+                  </p>
+                )}
               </div>
+
 
               <div className="space-y-1">
                 <label className="block text-xs uppercase font-extrabold tracking-wider text-secondary">

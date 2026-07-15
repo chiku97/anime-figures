@@ -1,9 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Send } from 'lucide-react';
 import FormoraLogo from './FormoraLogo.jsx';
+import PolicyModal from './PolicyModal.jsx';
 
 const Footer = () => {
+  const [activeModal, setActiveModal] = useState(null); // 'shipping', 'return', 'privacy', 'terms', 'faqs', 'contact', 'about'
+
+  const handleCustomOrdersClick = (e) => {
+    e.preventDefault();
+    const element = document.getElementById('custom-orders');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      window.location.href = '/#custom-orders';
+    }
+  };
+
   return (
     <footer className="bg-warm-white border-t border-gray-200 py-12 px-6 md:px-12 font-outfit mt-auto z-10 relative text-left">
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
@@ -24,10 +36,42 @@ const Footer = () => {
           <ul className="space-y-2 text-sm text-secondary">
             <li><Link to="/catalog" className="hover:text-primary transition-colors">Shop</Link></li>
             <li><Link to="/catalog?sort=new" className="hover:text-primary transition-colors">New Arrivals</Link></li>
-            <li><a href="#story" className="hover:text-primary transition-colors">About Us</a></li>
-            <li><a href="#custom-orders" className="hover:text-primary transition-colors">Custom Orders</a></li>
-            <li><Link to="/faqs" className="hover:text-primary transition-colors">FAQs</Link></li>
-            <li><Link to="/contact" className="hover:text-primary transition-colors">Contact</Link></li>
+            <li>
+              <a 
+                href="#about" 
+                onClick={(e) => { e.preventDefault(); setActiveModal('about'); }} 
+                className="hover:text-primary transition-colors"
+              >
+                About Us
+              </a>
+            </li>
+            <li>
+              <a 
+                href="#custom-orders" 
+                onClick={handleCustomOrdersClick} 
+                className="hover:text-primary transition-colors"
+              >
+                Custom Orders
+              </a>
+            </li>
+            <li>
+              <a 
+                href="#faqs" 
+                onClick={(e) => { e.preventDefault(); setActiveModal('faqs'); }} 
+                className="hover:text-primary transition-colors"
+              >
+                FAQs
+              </a>
+            </li>
+            <li>
+              <a 
+                href="#contact" 
+                onClick={(e) => { e.preventDefault(); setActiveModal('contact'); }} 
+                className="hover:text-primary transition-colors"
+              >
+                Contact
+              </a>
+            </li>
           </ul>
         </div>
 
@@ -35,10 +79,42 @@ const Footer = () => {
         <div>
           <h4 className="text-xs uppercase font-extrabold tracking-widest text-primary mb-4">Support</h4>
           <ul className="space-y-2 text-sm text-secondary">
-            <li><Link to="/shipping-policy" className="hover:text-primary transition-colors">Shipping Policy</Link></li>
-            <li><Link to="/return-policy" className="hover:text-primary transition-colors">Return Policy</Link></li>
-            <li><Link to="/privacy-policy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
-            <li><Link to="/terms" className="hover:text-primary transition-colors">Terms & Conditions</Link></li>
+            <li>
+              <a 
+                href="#shipping-policy" 
+                onClick={(e) => { e.preventDefault(); setActiveModal('shipping'); }} 
+                className="hover:text-primary transition-colors"
+              >
+                Shipping Policy
+              </a>
+            </li>
+            <li>
+              <a 
+                href="#return-policy" 
+                onClick={(e) => { e.preventDefault(); setActiveModal('return'); }} 
+                className="hover:text-primary transition-colors"
+              >
+                Return Policy
+              </a>
+            </li>
+            <li>
+              <a 
+                href="#privacy-policy" 
+                onClick={(e) => { e.preventDefault(); setActiveModal('privacy'); }} 
+                className="hover:text-primary transition-colors"
+              >
+                Privacy Policy
+              </a>
+            </li>
+            <li>
+              <a 
+                href="#terms" 
+                onClick={(e) => { e.preventDefault(); setActiveModal('terms'); }} 
+                className="hover:text-primary transition-colors"
+              >
+                Terms & Conditions
+              </a>
+            </li>
           </ul>
         </div>
 
@@ -64,6 +140,14 @@ const Footer = () => {
         <p>© 2026 Formora. All rights reserved.</p>
         <p className="mt-2 md:mt-0 font-medium">Made with Passion in India</p>
       </div>
+
+      {/* Global Policy Popup Modal */}
+      {activeModal && (
+        <PolicyModal 
+          type={activeModal} 
+          onClose={() => setActiveModal(null)} 
+        />
+      )}
     </footer>
   );
 };

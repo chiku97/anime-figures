@@ -26,8 +26,11 @@ const config = {
   razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET,
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME,
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY,
-  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET
+  cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET,
+  adminEmail: process.env.ADMIN_EMAIL || 'admin@formorastudio.com',
+  adminPassword: process.env.ADMIN_PASSWORD || 'StudioFormoraAdmin2026!#Secure'
 };
+
 
 if (!config.mongodbUri) {
   throw new Error('FATAL: MONGODB_URI is not set in environment variables.');

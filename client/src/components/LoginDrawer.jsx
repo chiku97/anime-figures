@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { X, Sparkles, Phone, Mail } from 'lucide-react';
+import { X, Sparkles, Mail } from 'lucide-react';
 import { loginSuccess, setLoginDrawerOpen } from '../store/authSlice.js';
 import apiClient from '../api/client.js';
 import { auth } from '../config/firebase.js';
@@ -37,8 +37,6 @@ const LoginDrawer = () => {
       setLoading(false);
     }
   };
-
-  // Google Sandbox login is removed in production
 
   useEffect(() => {
     let checkGoogle;
@@ -306,10 +304,7 @@ const LoginDrawer = () => {
             <div className="flex justify-center">
               <div id="google-signin-btn-div" className="w-full min-h-[44px]"></div>
             </div>
-
-            {/* Sandbox bypass options removed */}
           </div>
-
         </div>
 
         {/* Footer cancel option */}

@@ -19,7 +19,7 @@ const app = express();
 
 // Middlewares
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
 
 // In-memory database fallback stores for database-offline mode
 const offlineStore = {
@@ -358,7 +358,7 @@ app.post('/api/auth/verify-otp', async (req, res) => {
 
     // Provision User Session
     let user;
-    const isEmailAdmin = phoneOrEmail === 'admin@formorastudio.com' || phoneOrEmail.includes('admin');
+    const isEmailAdmin = phoneOrEmail.toLowerCase() === config.adminEmail.toLowerCase();
 
     if (isDbOffline) {
       user = offlineStore.users.find(u => u.email === phoneOrEmail.toLowerCase() || u.phone === phoneOrEmail);
@@ -490,7 +490,7 @@ app.post('/api/auth/firebase-login', async (req, res) => {
   try {
     // Perform robust cryptographic signature and claims verification
     const payload = await verifyFirebaseIdToken(idToken);
-    
+
     const email = payload.email || '';
     const phone = payload.phone_number || '';
     const uid = payload.sub; // Firebase UID
@@ -502,7 +502,7 @@ app.post('/api/auth/firebase-login', async (req, res) => {
 
     const isDbOffline = mongoose.connection.readyState !== 1;
     let user;
-    const isEmailAdmin = (email && (email === 'admin@formorastudio.com' || email.includes('admin')));
+    const isEmailAdmin = email && email.toLowerCase() === config.adminEmail.toLowerCase();
 
     if (isDbOffline) {
       user = offlineStore.users.find(u => u.email === email.toLowerCase() || u.phone === phone);
@@ -519,9 +519,9 @@ app.post('/api/auth/firebase-login', async (req, res) => {
       }
     } else {
       // Find user by phone, email, or Firebase ID provider
-      user = await User.findOne({ 
+      user = await User.findOne({
         $or: [
-          email ? { email: email.toLowerCase() } : undefined, 
+          email ? { email: email.toLowerCase() } : undefined,
           phone ? { phone: phone } : undefined,
           { 'authProviders.providerId': uid }
         ].filter(Boolean)
@@ -658,7 +658,7 @@ app.post('/api/users/addresses', requireAuth, async (req, res) => {
     if (isDbOffline) {
       const user = offlineStore.users.find(u => u._id.toString() === req.user.id.toString());
       if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-      
+
       const newAddress = {
         _id: `addr-${Date.now()}`,
         name,
@@ -696,7 +696,7 @@ app.delete('/api/users/addresses/:addressId', requireAuth, async (req, res) => {
     if (isDbOffline) {
       const user = offlineStore.users.find(u => u._id.toString() === req.user.id.toString());
       if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-      
+
       user.addresses = (user.addresses || []).filter(addr => addr._id.toString() !== addressId.toString());
       return res.status(200).json({ success: true, message: 'Address deleted successfully', addresses: user.addresses });
     }
@@ -766,7 +766,7 @@ app.post('/api/auth/google-login', async (req, res) => {
 
     const isDbOffline = mongoose.connection.readyState !== 1;
     let user;
-    const isEmailAdmin = email === 'admin@formorastudio.com' || email.includes('admin');
+    const isEmailAdmin = email && email.toLowerCase() === config.adminEmail.toLowerCase();
 
     if (isDbOffline) {
       user = offlineStore.users.find(u => u.email === email.toLowerCase());
@@ -841,6 +841,15 @@ app.post('/api/products', requireAdmin, async (req, res) => {
       status: 'active'
     };
 
+    if (mongoose.connection.readyState !== 1) {
+      const offlineProduct = {
+        _id: `offline-product-${Date.now()}`,
+        ...productData
+      };
+      offlineStore.products.push(offlineProduct);
+      return res.status(201).json({ success: true, product: offlineProduct });
+    }
+
     // Find default seller
     let seller = await Seller.findOne();
     if (!seller) {
@@ -886,6 +895,20 @@ app.put('/api/products/:id', requireAdmin, async (req, res) => {
       updates.slug = updates.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
     }
 
+    if (mongoose.connection.readyState !== 1) {
+      const index = offlineStore.products.findIndex(p => p._id === id);
+      if (index === -1) {
+        return res.status(404).json({ success: false, message: 'Product not found' });
+      }
+      const existingProduct = offlineStore.products[index];
+      const updatedProduct = {
+        ...existingProduct,
+        ...updates
+      };
+      offlineStore.products[index] = updatedProduct;
+      return res.status(200).json({ success: true, product: updatedProduct });
+    }
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid product ID' });
     }
@@ -904,6 +927,15 @@ app.put('/api/products/:id', requireAdmin, async (req, res) => {
 app.delete('/api/products/:id', requireAdmin, async (req, res) => {
   const { id } = req.params;
   try {
+    if (mongoose.connection.readyState !== 1) {
+      const index = offlineStore.products.findIndex(p => p._id === id);
+      if (index === -1) {
+        return res.status(404).json({ success: false, message: 'Product not found' });
+      }
+      offlineStore.products.splice(index, 1);
+      return res.status(200).json({ success: true, message: 'Product deleted successfully' });
+    }
+
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid product ID' });
     }
@@ -931,6 +963,34 @@ app.post('/api/products/:idOrSlug/reviews', requireAuth, async (req, res) => {
   }
 
   try {
+    if (mongoose.connection.readyState !== 1) {
+      const product = offlineStore.products.find(p => p._id === idOrSlug || p.slug === idOrSlug);
+      if (!product) {
+        return res.status(404).json({ success: false, message: 'Product not found.' });
+      }
+      const userName = req.user.email ? req.user.email.split('@')[0] : 'Buyer';
+      const offlineReview = {
+        _id: `offline-review-${Date.now()}`,
+        productId: product._id,
+        userId: req.user.id,
+        rating: parsedRating,
+        body: body,
+        createdAt: new Date().toISOString()
+      };
+      return res.status(201).json({
+        success: true,
+        message: 'Review created successfully (offline)',
+        review: {
+          _id: offlineReview._id,
+          userId: req.user.id,
+          userName: userName,
+          rating: parsedRating,
+          comment: body,
+          createdAt: offlineReview.createdAt
+        }
+      });
+    }
+
     let product;
     if (mongoose.Types.ObjectId.isValid(idOrSlug)) {
       product = await Product.findById(idOrSlug);
@@ -1102,7 +1162,7 @@ app.post('/api/payments/verify', requireAuth, async (req, res) => {
       // Save address to offline user
       const user = offlineStore.users.find(u => u._id.toString() === req.user.id.toString());
       if (user && address) {
-        const addressExists = user.addresses.some(addr => 
+        const addressExists = user.addresses.some(addr =>
           addr.address1.toLowerCase() === address.address1.toLowerCase() &&
           addr.pincode === address.pincode
         );
@@ -1140,7 +1200,7 @@ app.post('/api/payments/verify', requireAuth, async (req, res) => {
     try {
       const user = await User.findById(req.user.id);
       if (user && address) {
-        const addressExists = user.addresses.some(addr => 
+        const addressExists = user.addresses.some(addr =>
           addr.address1.toLowerCase() === address.address1.toLowerCase() &&
           (addr.address2 || '').toLowerCase() === (address.address2 || '').toLowerCase() &&
           addr.pincode === address.pincode &&
@@ -1252,7 +1312,7 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
         email: 'customer@formorastudio.com',
         phone: '9876543210'
       };
-      
+
       const populatedOrder = {
         ...order,
         userId: userObj
@@ -1278,8 +1338,119 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
   }
 });
 
+
+// Admin Credentials & Password Login
+app.post('/api/auth/admin-login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ success: false, message: 'Email and password are required' });
+  }
+
+  if (email.toLowerCase() !== config.adminEmail.toLowerCase()) {
+    return res.status(401).json({ success: false, message: 'Invalid admin credentials' });
+  }
+
+  if (password !== config.adminPassword) {
+    return res.status(401).json({ success: false, message: 'Invalid admin credentials' });
+  }
+
+  try {
+    const isDbOffline = mongoose.connection.readyState !== 1;
+    let user;
+    if (isDbOffline) {
+      user = offlineStore.users.find(u => u.email === config.adminEmail.toLowerCase());
+      if (!user) {
+        user = {
+          _id: 'offline-admin',
+          name: 'Formora Admin',
+          email: config.adminEmail.toLowerCase(),
+          phone: '9999999999',
+          role: 'admin',
+          addresses: []
+        };
+        offlineStore.users.push(user);
+      }
+    } else {
+      user = await User.findOne({ email: config.adminEmail.toLowerCase() });
+      if (!user) {
+        user = await User.create({
+          name: 'Formora Admin',
+          email: config.adminEmail.toLowerCase(),
+          phone: '9999999999',
+          role: 'admin',
+          passwordless: false
+        });
+      }
+    }
+
+    const appToken = jwt.sign(
+      { id: user._id, role: user.role, email: user.email },
+      process.env.JWT_SECRET || 'super_secret_jwt_sign_key_change_me',
+      { expiresIn: '7d' }
+    );
+
+    res.status(200).json({
+      success: true,
+      token: appToken,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role
+      }
+    });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// Admin Image Upload to Cloudinary (direct API signature flow)
+app.post('/api/admin/upload-image', requireAdmin, async (req, res) => {
+  const { image } = req.body;
+  if (!image) {
+    return res.status(400).json({ success: false, message: 'Image data is required' });
+  }
+
+  try {
+    const timestamp = Math.round(Date.now() / 1000);
+    const folder = 'anime_figures';
+    const stringToSign = `folder=${folder}&timestamp=${timestamp}${config.cloudinaryApiSecret}`;
+    const signature = crypto.createHash('sha1').update(stringToSign).digest('hex');
+
+    const formData = new URLSearchParams();
+    formData.append('file', image);
+    formData.append('api_key', config.cloudinaryApiKey);
+    formData.append('timestamp', timestamp.toString());
+    formData.append('folder', folder);
+    formData.append('signature', signature);
+
+    const cloudinaryUrl = `https://api.cloudinary.com/v1_1/${config.cloudinaryCloudName}/image/upload`;
+    const response = await fetch(cloudinaryUrl, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      console.error('[CLOUDINARY ERROR]', data);
+      return res.status(400).json({ success: false, message: data.error?.message || 'Cloudinary upload failed' });
+    }
+
+    res.status(200).json({
+      success: true,
+      url: data.secure_url,
+    });
+  } catch (error) {
+    console.error('Image upload error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // Error handlers
 app.use(notFoundHandler);
 app.use(errorHandler);
 
 export default app;
+

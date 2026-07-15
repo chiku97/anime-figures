@@ -18,6 +18,15 @@ import SellerApply from './pages/SellerApply.jsx';
 import SellerDashboard from './pages/seller/SellerDashboard.jsx';
 import AdminApprovals from './pages/admin/AdminApprovals.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
+import AdminLogin from './pages/admin/AdminLogin.jsx';
+import Contact from './pages/Contact.jsx';
+import Terms from './pages/Terms.jsx';
+import ShippingPolicy from './pages/ShippingPolicy.jsx';
+import ReturnPolicy from './pages/ReturnPolicy.jsx';
+import FAQs from './pages/FAQs.jsx';
+import LegalNotice from './pages/LegalNotice.jsx';
+
+
 
 function App() {
   return (
@@ -44,11 +53,20 @@ function App() {
               <Route path="/checkout" element={<Checkout />} />
               <Route path="/profile" element={<Profile />} />
 
+              {/* Support & Policy Routes */}
+              <Route path="/contact" element={<Contact />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/shipping-policy" element={<ShippingPolicy />} />
+              <Route path="/return-policy" element={<ReturnPolicy />} />
+              <Route path="/faqs" element={<FAQs />} />
+              <Route path="/privacy-policy" element={<LegalNotice />} />
+
               {/* Seller Routes */}
               <Route path="/seller/apply" element={<SellerApply />} />
               <Route path="/seller/dashboard" element={<SellerDashboard />} />
 
               {/* Admin Routes */}
+              <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin/approvals" element={<AdminApprovals />} />
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
 

@@ -289,7 +289,51 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* 2. Featured Collections */}
+        {/* Why Formora (USP Section) */}
+        <UspSection />
+
+        {/* Custom Orders */}
+        <section id="custom-orders" className="py-20 px-6 md:px-12 bg-[#FAF9F6] border-t border-gray-200 z-10 relative font-outfit">
+          <div className="max-w-7xl mx-auto card rounded-[2.5rem] md:rounded-[3.5rem] bg-gradient-to-tr from-sage/20 via-white to-gold/10 p-8 md:p-16 border border-primary/20 shadow-xl text-left flex flex-col lg:flex-row gap-12 justify-between items-center bg-white">
+            <div className="space-y-6 max-w-xl">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-primary/10 text-primary text-[10px] font-extrabold uppercase tracking-widest">
+                <Gift className="w-3 h-3 text-sage" /> Customized Creation Studio
+              </div>
+              <h2 className="text-3xl md:text-5xl font-black text-primary uppercase leading-tight">
+                HAVE AN IDEA <br />IN MIND?
+              </h2>
+              <p className="text-sm md:text-base text-secondary leading-relaxed">
+                We create personalized 3D-printed products for:
+              </p>
+
+              {/* Bullets grid */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs font-bold text-primary uppercase tracking-wider">
+                {['🎁 Gifts', '🏆 Sports Memorabilia', '🏠 Home Décor', '💼 Business Branding', '🏢 Corporate Gifting', '⭐ Special Occasions'].map((c, i) => (
+                  <div key={i} className="px-3.5 py-2 rounded-lg bg-white border border-black/5 shadow-sm">
+                    {c}
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-xs text-secondary leading-relaxed">
+                Let's bring your idea to life. Simply submit your custom design request and our engineering team will handle prototyping.
+              </p>
+            </div>
+
+            <div className="flex-shrink-0 w-full lg:w-auto">
+              <a
+                href="https://wa.me/919876543210?text=Hi%20Formora,%20I'd%20like%20to%20request%20a%20custom%203D%20printed%20design!"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-8 py-5 btn-primary hover:bg-primary font-black rounded-xl shadow-lg inline-flex items-center justify-center gap-3 w-full lg:w-auto text-base uppercase tracking-widest text-white"
+              >
+                <Mail className="w-5 h-5" /> Request a Custom Design
+              </a>
+            </div>
+          </div>
+        </section>
+
+        {/* Featured Collections */}
         <CategoriesSection />
 
         {/* 3. Best Sellers */}
@@ -366,10 +410,7 @@ const Landing = () => {
           )}
         </section>
 
-        {/* 4. Why Formora */}
-        <UspSection />
-
-        {/* 5. New Arrivals */}
+        {/* New Arrivals */}
         <section className="py-24 px-6 md:px-12 max-w-7xl mx-auto z-10 relative text-left">
           <div className="text-center max-w-xl mx-auto mb-16">
             <h2 className="text-3xl md:text-4xl font-extrabold text-primary uppercase tracking-wider font-outfit">
@@ -494,46 +535,7 @@ const Landing = () => {
           </div>
         </section>
 
-        {/* 7. Custom Orders */}
-        <section id="custom-orders" className="py-20 px-6 md:px-12 bg-[#FAF9F6] border-t border-gray-200 z-10 relative font-outfit">
-          <div className="max-w-7xl mx-auto card rounded-[2.5rem] md:rounded-[3.5rem] bg-gradient-to-tr from-sage/20 via-white to-gold/10 p-8 md:p-16 border border-primary/20 shadow-xl text-left flex flex-col lg:flex-row gap-12 justify-between items-center bg-white">
-            <div className="space-y-6 max-w-xl">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-primary/10 text-primary text-[10px] font-extrabold uppercase tracking-widest">
-                <Gift className="w-3 h-3 text-sage" /> Customized Creation Studio
-              </div>
-              <h2 className="text-3xl md:text-5xl font-black text-primary uppercase leading-tight">
-                HAVE AN IDEA <br />IN MIND?
-              </h2>
-              <p className="text-sm md:text-base text-secondary leading-relaxed">
-                We create personalized 3D-printed products for:
-              </p>
 
-              {/* Bullets grid */}
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-xs font-bold text-primary uppercase tracking-wider">
-                {['🎁 Gifts', '🏆 Sports Memorabilia', '🏠 Home Décor', '💼 Business Branding', '🏢 Corporate Gifting', '⭐ Special Occasions'].map((c, i) => (
-                  <div key={i} className="px-3.5 py-2 rounded-lg bg-white border border-black/5 shadow-sm">
-                    {c}
-                  </div>
-                ))}
-              </div>
-
-              <p className="text-xs text-secondary leading-relaxed">
-                Let's bring your idea to life. Simply submit your custom design request and our engineering team will handle prototyping.
-              </p>
-            </div>
-
-            <div className="flex-shrink-0 w-full lg:w-auto">
-              <a
-                href="https://wa.me/919876543210?text=Hi%20Formora,%20I'd%20like%20to%20request%20a%20custom%203D%20printed%20design!"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-8 py-5 btn-primary hover:bg-primary font-black rounded-xl shadow-lg inline-flex items-center justify-center gap-3 w-full lg:w-auto text-base uppercase tracking-widest text-white"
-              >
-                <Mail className="w-5 h-5" /> Request a Custom Design
-              </a>
-            </div>
-          </div>
-        </section>
 
         {/* 8. Freebies Section */}
         <section className="py-24 px-6 md:px-12 bg-white border-t border-gray-200 z-10 relative font-outfit text-left">
