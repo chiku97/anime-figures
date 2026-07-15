@@ -175,8 +175,8 @@ const Landing = () => {
             {/* Heading */}
             <div className="space-y-4">
               <h1 className="text-4xl md:text-7xl font-extrabold tracking-tight leading-[0.95] text-primary uppercase">
-                Where Passion <br />
-                <span 
+                Where Vision <br />
+                <span
                   className="font-outfit"
                   style={{
                     background: 'linear-gradient(to right, #A6B39B, #B97A57, #C9A227)',
@@ -185,7 +185,7 @@ const Landing = () => {
                     display: 'inline-block'
                   }}
                 >
-                  Meets Design.
+                  Finds Form.
                 </span>
               </h1>
               <p className="text-sm md:text-lg text-secondary max-w-xl font-normal leading-relaxed">
