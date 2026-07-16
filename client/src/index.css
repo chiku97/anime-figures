@@ -11,18 +11,12 @@
   box-sizing: border-box;
 }
 
-html {
-  overflow-x: hidden;
-  overflow-y: auto;
-}
 
 body {
   font-family: 'Outfit', sans-serif;
   background-color: var(--color-warm-white);
   color: var(--color-primary-charcoal);
   line-height: 1.6;
-  overflow-x: hidden;
-  overflow-y: auto;
 }
 
 a {
@@ -218,4 +212,13 @@ textarea,
 select {
   /* Reset any accidental pop inheritance */
   animation-play-state: var(--play, running);
+}
+
+/* Hide scrollbar utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
