@@ -5,6 +5,7 @@ import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
+import admin from 'firebase-admin';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import User from './models/User.js';
 import Product from './models/Product.js';
@@ -16,6 +17,17 @@ import config from './config/index.js';
 import { connectDB } from './config/db.js';
 
 const app = express();
+
+// Initialize Firebase Admin SDK
+try {
+  const firebaseProjectId = process.env.VITE_FIREBASE_PROJECT_ID || 'formora-e472a';
+  admin.initializeApp({
+    projectId: firebaseProjectId
+  });
+  console.log(`[FIREBASE ADMIN] Initialized Firebase Admin SDK successfully for project: ${firebaseProjectId}`);
+} catch (err) {
+  console.warn('[FIREBASE ADMIN] Failed to initialize Firebase Admin SDK:', err.message);
+}
 
 // Middlewares
 app.use(cors());
@@ -625,6 +637,82 @@ app.put('/api/users/profile', requireAuth, async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 });
+
+// Register/Update FCM Token for user
+app.post('/api/users/fcm-token', requireAuth, async (req, res) => {
+  const { token } = req.body;
+  if (!token) {
+    return res.status(400).json({ success: false, message: 'FCM Token is required' });
+  }
+
+  try {
+    const isDbOffline = mongoose.connection.readyState !== 1;
+    if (isDbOffline) {
+      const user = offlineStore.users.find(u => u._id.toString() === req.user.id.toString());
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      user.fcmToken = token;
+      return res.status(200).json({ success: true, message: 'FCM Token registered successfully (In-Memory)' });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    user.fcmToken = token;
+    await user.save();
+
+    return res.status(200).json({ success: true, message: 'FCM Token registered successfully' });
+  } catch (err) {
+    console.error('Failed to register FCM token:', err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// Send Firebase Cloud Message (FCM) tracking details notification to customer
+async function sendFirebaseNotification(order) {
+  const name = order.shippingAddress?.name || order.userId?.name || 'Customer';
+  const tracking = order.tracking || { carrier: 'Shipping Partner', trackingNumber: 'N/A' };
+  const carrier = tracking.carrier || 'Shipping Partner';
+  const trackingNumber = tracking.trackingNumber || 'N/A';
+  const orderId = (order._id || order.id).toString();
+  const shortOrderId = orderId.substring(0, 10);
+
+  const title = 'Order Shipped! 🚚';
+  const body = `Hello ${name}, your Formora Studio order #${shortOrderId}... has been shipped via ${carrier}. Tracking #: ${trackingNumber}`;
+
+  // Log message detail inside a highly visible fallback block
+  console.log(`\n========================================================================`);
+  console.log(`[FIREBASE CLOUD MESSAGING (FCM) SIMULATION]`);
+  console.log(`Recipient Name: ${name}`);
+  console.log(`Recipient Phone/Email: ${order.shippingAddress?.phone || order.userId?.email || 'N/A'}`);
+  console.log(`Recipient FCM Token: ${order.userId?.fcmToken || 'No token registered (using fallback)'}`);
+  console.log(`Payload:`);
+  console.log(JSON.stringify({ notification: { title, body } }, null, 2));
+  console.log(`========================================================================\n`);
+
+  const token = order.userId?.fcmToken;
+  if (!token || token.startsWith('mock-')) {
+    console.log(`[FCM NOTIFY] Skipping real API dispatch for mock/empty FCM token.`);
+    return;
+  }
+
+  try {
+    const payload = {
+      notification: {
+        title,
+        body
+      },
+      token: token
+    };
+    const response = await admin.messaging().send(payload);
+    console.log('[FCM NOTIFY] Firebase message sent successfully:', response);
+  } catch (err) {
+    console.error('[FCM NOTIFY] Failed to send Firebase Cloud Message via SDK:', err.message);
+  }
+}
+
 
 // GET saved addresses list
 app.get('/api/users/addresses', requireAuth, async (req, res) => {
@@ -1303,6 +1391,17 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
       if (!order) {
         return res.status(404).json({ success: false, message: 'Order not found.' });
       }
+
+      const oldStatus = order.status;
+      const proposedStatus = status !== undefined ? status : order.status;
+      const proposedTracking = tracking !== undefined ? tracking : order.tracking;
+
+      if (proposedStatus === 'shipped') {
+        if (!proposedTracking || !proposedTracking.carrier || !proposedTracking.trackingNumber || !proposedTracking.carrier.trim() || !proposedTracking.trackingNumber.trim()) {
+          return res.status(400).json({ success: false, message: 'Tracking details (Carrier and Tracking Number) are required to mark the order as Shipped.' });
+        }
+      }
+
       if (status !== undefined) order.status = status;
       if (tracking !== undefined) order.tracking = tracking;
       order.updatedAt = new Date();
@@ -1310,14 +1409,35 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
       const userObj = offlineStore.users.find(u => u._id.toString() === order.userId.toString()) || {
         name: 'Offline Customer',
         email: 'customer@formorastudio.com',
-        phone: '9876543210'
+        phone: '9876543210',
+        fcmToken: `mock-fcm-token-${order.userId.toString()}`
       };
 
       const populatedOrder = {
         ...order,
         userId: userObj
       };
+
+      if ((oldStatus !== 'shipped' && populatedOrder.status === 'shipped') || (populatedOrder.status === 'shipped' && tracking !== undefined)) {
+        sendFirebaseNotification(populatedOrder);
+      }
+
       return res.status(200).json({ success: true, order: populatedOrder });
+    }
+
+    const order = await Order.findById(id).populate('userId', 'name email phone fcmToken');
+    if (!order) {
+      return res.status(404).json({ success: false, message: 'Order not found.' });
+    }
+
+    const oldStatus = order.status;
+    const proposedStatus = status !== undefined ? status : order.status;
+    const proposedTracking = tracking !== undefined ? tracking : order.tracking;
+
+    if (proposedStatus === 'shipped') {
+      if (!proposedTracking || !proposedTracking.carrier || !proposedTracking.trackingNumber || !proposedTracking.carrier.trim() || !proposedTracking.trackingNumber.trim()) {
+        return res.status(400).json({ success: false, message: 'Tracking details (Carrier and Tracking Number) are required to mark the order as Shipped.' });
+      }
     }
 
     const updates = {};
@@ -1325,10 +1445,10 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
     if (tracking !== undefined) updates.tracking = tracking;
 
     const updatedOrder = await Order.findByIdAndUpdate(id, updates, { new: true })
-      .populate('userId', 'name email phone');
+      .populate('userId', 'name email phone fcmToken');
 
-    if (!updatedOrder) {
-      return res.status(404).json({ success: false, message: 'Order not found.' });
+    if ((oldStatus !== 'shipped' && updatedOrder.status === 'shipped') || (updatedOrder.status === 'shipped' && tracking !== undefined)) {
+      sendFirebaseNotification(updatedOrder);
     }
 
     res.status(200).json({ success: true, order: updatedOrder });
@@ -1448,9 +1568,80 @@ app.post('/api/admin/upload-image', requireAdmin, async (req, res) => {
   }
 });
 
-// Error handlers
-app.use(notFoundHandler);
-app.use(errorHandler);
+// Mock Shipping Partner API status checker
+async function fetchShippingPartnerTracking(carrier, trackingNumber, shippedAt) {
+  // Simulates calling the shipping partner's API (e.g. BlueDart, FedEx)
+  // For testing:
+  // 1. Returns "delivered" if the tracking number contains "deliv" (case-insensitive)
+  // 2. Returns "delivered" if more than 30 seconds have passed since it was marked as shipped (shippedAt)
+  // Otherwise, returns "in_transit"
+  const trackingNumberLower = (trackingNumber || '').toLowerCase();
+  if (trackingNumberLower.includes('deliv')) {
+    return 'delivered';
+  }
+
+  if (shippedAt) {
+    const elapsedMs = Date.now() - new Date(shippedAt).getTime();
+    if (elapsedMs > 30 * 1000) {
+      return 'delivered';
+    }
+  }
+
+  return 'in_transit';
+}
+
+// Background shipping partner tracking check:
+// Decoupled status checker that queries shipping partner API for "shipped" orders
+setInterval(async () => {
+  try {
+    const isDbOffline = mongoose.connection.readyState !== 1;
+
+    if (isDbOffline) {
+      if (offlineStore && offlineStore.orders) {
+        const shippedOrders = offlineStore.orders.filter(o => o.status === 'shipped');
+        for (const order of shippedOrders) {
+          const partnerStatus = await fetchShippingPartnerTracking(
+            order.tracking?.carrier,
+            order.tracking?.trackingNumber,
+            order.updatedAt || order.createdAt
+          );
+
+          console.log(`[SHIPPING CHECK] Checked order ${order._id || order.id} via ${order.tracking?.carrier}. Partner returned: ${partnerStatus}`);
+
+          if (partnerStatus === 'delivered') {
+            order.status = 'delivered';
+            order.updatedAt = new Date();
+            console.log(`\n========================================================================`);
+            console.log(`[SHIPPING UPDATE] Order ${order._id || order.id} updated to DELIVERED based on shipping partner tracking.`);
+            console.log(`========================================================================\n`);
+          }
+        }
+      }
+    } else {
+      const shippedOrders = await Order.find({ status: 'shipped' });
+
+      for (const order of shippedOrders) {
+        const partnerStatus = await fetchShippingPartnerTracking(
+          order.tracking?.carrier,
+          order.tracking?.trackingNumber,
+          order.updatedAt || order.createdAt
+        );
+
+        console.log(`[SHIPPING CHECK] Checked order ${order._id} via ${order.tracking?.carrier}. Partner returned: ${partnerStatus}`);
+
+        if (partnerStatus === 'delivered') {
+          order.status = 'delivered';
+          await order.save();
+          console.log(`\n========================================================================`);
+          console.log(`[SHIPPING UPDATE] Order ${order._id} updated to DELIVERED based on shipping partner tracking.`);
+          console.log(`========================================================================\n`);
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Error in background shipping partner tracker:', err.message);
+  }
+}, 10000); // Check every 10 seconds
 
 export default app;
 

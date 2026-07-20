@@ -81,11 +81,24 @@ const Profile = () => {
       }
     };
 
+    const registerFcmToken = async () => {
+      try {
+        if (user && (user.id || user._id)) {
+          const mockToken = `mock-fcm-token-${user.id || user._id}`;
+          await apiClient.post('/api/users/fcm-token', { token: mockToken });
+          console.log('[FCM] Registered simulated FCM token successfully:', mockToken);
+        }
+      } catch (err) {
+        console.error('[FCM] Failed to register simulated FCM token:', err);
+      }
+    };
+
     if (isAuthenticated) {
       fetchOrders();
       fetchAddresses();
+      registerFcmToken();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, user]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -246,6 +259,17 @@ const Profile = () => {
                         Date: {new Date(o.createdAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}
                       </p>
                     </div>
+
+                    {o.tracking && o.tracking.carrier && o.tracking.trackingNumber && (
+                      <div className="p-2 bg-primary/5 border border-primary/10 rounded text-[10px] space-y-1 text-left text-primary mt-2">
+                        <p className="font-extrabold uppercase tracking-widest text-[9px] flex items-center gap-1">
+                          <Package className="w-3.5 h-3.5 text-accent" /> Shipment Details
+                        </p>
+                        <p><span className="font-semibold text-secondary">Carrier:</span> {o.tracking.carrier}</p>
+                        <p><span className="font-semibold text-secondary">Tracking #:</span> <span className="font-mono text-primary">{o.tracking.trackingNumber}</span></p>
+                      </div>
+                    )}
+
                     <div className="flex justify-between items-center border-t border-primary/10 pt-2 font-bold text-primary">
                       <span>Paid: ₹{o.amount.toLocaleString('en-IN')}</span>
                       <span className="text-accent uppercase text-[9px] tracking-wider">Paid via Razorpay</span>

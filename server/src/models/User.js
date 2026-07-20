@@ -30,6 +30,10 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  fcmToken: {
+    type: String,
+    trim: true
+  },
   addresses: [{
     name: { type: String, required: true },
     phone: { type: String, required: true },

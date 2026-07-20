@@ -137,6 +137,20 @@ const AdminDashboard = () => {
 
   // Update Order Status
   const handleUpdateOrderStatus = async (orderId, status) => {
+    if (status === 'shipped') {
+      const currentOrder = orders.find(o => (o._id === orderId || o.id === orderId));
+      const currentTracking = currentOrder?.tracking || { carrier: '', trackingNumber: '' };
+      const trackingInput = trackingInputs[orderId] || { carrier: '', trackingNumber: '' };
+
+      const carrier = trackingInput.carrier?.trim() || currentTracking.carrier?.trim();
+      const trackingNumber = trackingInput.trackingNumber?.trim() || currentTracking.trackingNumber?.trim();
+
+      if (!carrier || !trackingNumber) {
+        dispatch(addToast({ message: 'Tracking details (Carrier and Tracking Number) are required to mark the order as Shipped.', type: 'error' }));
+        return;
+      }
+    }
+
     try {
       const res = await apiClient.put(`/api/admin/orders/${orderId}`, { status });
       if (res.data.success) {
@@ -146,7 +160,7 @@ const AdminDashboard = () => {
       }
     } catch (err) {
       console.error('Failed to update status:', err);
-      dispatch(addToast({ message: 'Error updating status.', type: 'error' }));
+      dispatch(addToast({ message: err.response?.data?.message || 'Error updating status.', type: 'error' }));
     }
   };
 
@@ -161,7 +175,7 @@ const AdminDashboard = () => {
       }
     } catch (err) {
       console.error('Failed to update tracking:', err);
-      dispatch(addToast({ message: 'Error updating tracking details.', type: 'error' }));
+      dispatch(addToast({ message: err.response?.data?.message || 'Error updating tracking details.', type: 'error' }));
     }
   };
 
