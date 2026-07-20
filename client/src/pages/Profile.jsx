@@ -81,24 +81,11 @@ const Profile = () => {
       }
     };
 
-    const registerFcmToken = async () => {
-      try {
-        if (user && (user.id || user._id)) {
-          const mockToken = `mock-fcm-token-${user.id || user._id}`;
-          await apiClient.post('/api/users/fcm-token', { token: mockToken });
-          console.log('[FCM] Registered simulated FCM token successfully:', mockToken);
-        }
-      } catch (err) {
-        console.error('[FCM] Failed to register simulated FCM token:', err);
-      }
-    };
-
     if (isAuthenticated) {
       fetchOrders();
       fetchAddresses();
-      registerFcmToken();
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated]);
 
   useEffect(() => {
     if (!isAuthenticated) {

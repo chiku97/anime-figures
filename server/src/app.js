@@ -5,7 +5,6 @@ import jwt from 'jsonwebtoken';
 import { OAuth2Client } from 'google-auth-library';
 import crypto from 'crypto';
 import Razorpay from 'razorpay';
-import admin from 'firebase-admin';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import User from './models/User.js';
 import Product from './models/Product.js';
@@ -17,17 +16,6 @@ import config from './config/index.js';
 import { connectDB } from './config/db.js';
 
 const app = express();
-
-// Initialize Firebase Admin SDK
-try {
-  const firebaseProjectId = process.env.VITE_FIREBASE_PROJECT_ID || 'formora-e472a';
-  admin.initializeApp({
-    projectId: firebaseProjectId
-  });
-  console.log(`[FIREBASE ADMIN] Initialized Firebase Admin SDK successfully for project: ${firebaseProjectId}`);
-} catch (err) {
-  console.warn('[FIREBASE ADMIN] Failed to initialize Firebase Admin SDK:', err.message);
-}
 
 // Middlewares
 app.use(cors());
@@ -639,77 +627,60 @@ app.put('/api/users/profile', requireAuth, async (req, res) => {
 });
 
 // Register/Update FCM Token for user
-app.post('/api/users/fcm-token', requireAuth, async (req, res) => {
-  const { token } = req.body;
-  if (!token) {
-    return res.status(400).json({ success: false, message: 'FCM Token is required' });
-  }
-
-  try {
-    const isDbOffline = mongoose.connection.readyState !== 1;
-    if (isDbOffline) {
-      const user = offlineStore.users.find(u => u._id.toString() === req.user.id.toString());
-      if (!user) {
-        return res.status(404).json({ success: false, message: 'User not found' });
-      }
-      user.fcmToken = token;
-      return res.status(200).json({ success: true, message: 'FCM Token registered successfully (In-Memory)' });
-    }
-
-    const user = await User.findById(req.user.id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    user.fcmToken = token;
-    await user.save();
-
-    return res.status(200).json({ success: true, message: 'FCM Token registered successfully' });
-  } catch (err) {
-    console.error('Failed to register FCM token:', err);
-    return res.status(500).json({ success: false, message: err.message });
-  }
-});
-
-// Send Firebase Cloud Message (FCM) tracking details notification to customer
-async function sendFirebaseNotification(order) {
+// Send SMS/WhatsApp tracking details notification to customer via Twilio, with fallback logs
+async function sendTwilioSMSNotification(order) {
   const name = order.shippingAddress?.name || order.userId?.name || 'Customer';
+  const phone = order.shippingAddress?.phone || order.userId?.phone;
+  const email = order.userId?.email || 'customer@formorastudio.com';
   const tracking = order.tracking || { carrier: 'Shipping Partner', trackingNumber: 'N/A' };
   const carrier = tracking.carrier || 'Shipping Partner';
-  const trackingNumber = tracking.trackingNumber || 'N/A';
+  const trackingNum = tracking.trackingNumber || 'N/A';
   const orderId = (order._id || order.id).toString();
   const shortOrderId = orderId.substring(0, 10);
 
-  const title = 'Order Shipped! 🚚';
-  const body = `Hello ${name}, your Formora Studio order #${shortOrderId}... has been shipped via ${carrier}. Tracking #: ${trackingNumber}`;
+  const messageText = `Hello ${name}, your Formora Studio order #${shortOrderId}... has been SHIPPED via ${carrier}! Track your shipment using tracking number: ${trackingNum}.`;
 
-  // Log message detail inside a highly visible fallback block
   console.log(`\n========================================================================`);
-  console.log(`[FIREBASE CLOUD MESSAGING (FCM) SIMULATION]`);
-  console.log(`Recipient Name: ${name}`);
-  console.log(`Recipient Phone/Email: ${order.shippingAddress?.phone || order.userId?.email || 'N/A'}`);
-  console.log(`Recipient FCM Token: ${order.userId?.fcmToken || 'No token registered (using fallback)'}`);
-  console.log(`Payload:`);
-  console.log(JSON.stringify({ notification: { title, body } }, null, 2));
+  console.log(`[TWILIO SMS NOTIFICATION SIMULATION]`);
+  console.log(`To Recipient: ${phone || email}`);
+  console.log(`Message Body: "${messageText}"`);
   console.log(`========================================================================\n`);
 
-  const token = order.userId?.fcmToken;
-  if (!token || token.startsWith('mock-')) {
-    console.log(`[FCM NOTIFY] Skipping real API dispatch for mock/empty FCM token.`);
-    return;
-  }
+  const twilioActive = config.twilioAccountSid && config.twilioAuthToken && config.twilioPhoneNumber;
+  if (phone && twilioActive) {
+    try {
+      const mobile = phone.startsWith('+') ? phone : `+91${phone}`;
+      const useWhatsapp = config.twilioUseWhatsapp;
+      const basicAuth = Buffer.from(`${config.twilioAccountSid}:${config.twilioAuthToken}`).toString('base64');
+      const toVal = useWhatsapp ? `whatsapp:${mobile}` : mobile;
+      const fromVal = useWhatsapp ? `whatsapp:+14155238886` : config.twilioPhoneNumber;
 
-  try {
-    const payload = {
-      notification: {
-        title,
-        body
-      },
-      token: token
-    };
-    const response = await admin.messaging().send(payload);
-    console.log('[FCM NOTIFY] Firebase message sent successfully:', response);
-  } catch (err) {
-    console.error('[FCM NOTIFY] Failed to send Firebase Cloud Message via SDK:', err.message);
+      const bodyParams = new URLSearchParams({
+        To: toVal,
+        From: fromVal,
+        Body: messageText
+      });
+
+      const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${config.twilioAccountSid}/Messages.json`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${basicAuth}`,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: bodyParams.toString()
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        console.error('[TWILIO NOTIFY] Twilio SMS dispatch failed downstream:', data.message);
+      } else {
+        console.log(`[TWILIO NOTIFY] Twilio SMS notification sent successfully to ${phone}`);
+      }
+    } catch (err) {
+      console.error('[TWILIO NOTIFY] Twilio send API failed:', err.message);
+    }
+  } else {
+    console.log(`[TWILIO NOTIFY] Skipping real API dispatch (Twilio config inactive or missing recipient phone).`);
   }
 }
 
@@ -1409,8 +1380,7 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
       const userObj = offlineStore.users.find(u => u._id.toString() === order.userId.toString()) || {
         name: 'Offline Customer',
         email: 'customer@formorastudio.com',
-        phone: '9876543210',
-        fcmToken: `mock-fcm-token-${order.userId.toString()}`
+        phone: '9876543210'
       };
 
       const populatedOrder = {
@@ -1419,13 +1389,13 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
       };
 
       if ((oldStatus !== 'shipped' && populatedOrder.status === 'shipped') || (populatedOrder.status === 'shipped' && tracking !== undefined)) {
-        sendFirebaseNotification(populatedOrder);
+        sendTwilioSMSNotification(populatedOrder);
       }
 
       return res.status(200).json({ success: true, order: populatedOrder });
     }
 
-    const order = await Order.findById(id).populate('userId', 'name email phone fcmToken');
+    const order = await Order.findById(id).populate('userId', 'name email phone');
     if (!order) {
       return res.status(404).json({ success: false, message: 'Order not found.' });
     }
@@ -1445,10 +1415,10 @@ app.put('/api/admin/orders/:id', requireAdmin, async (req, res) => {
     if (tracking !== undefined) updates.tracking = tracking;
 
     const updatedOrder = await Order.findByIdAndUpdate(id, updates, { new: true })
-      .populate('userId', 'name email phone fcmToken');
+      .populate('userId', 'name email phone');
 
     if ((oldStatus !== 'shipped' && updatedOrder.status === 'shipped') || (updatedOrder.status === 'shipped' && tracking !== undefined)) {
-      sendFirebaseNotification(updatedOrder);
+      sendTwilioSMSNotification(updatedOrder);
     }
 
     res.status(200).json({ success: true, order: updatedOrder });
