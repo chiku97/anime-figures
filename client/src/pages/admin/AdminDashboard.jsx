@@ -123,12 +123,9 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    if (activeTab === 'catalog') {
-      fetchProducts();
-    } else {
-      fetchOrders();
-    }
-  }, [activeTab]);
+    fetchProducts();
+    fetchOrders();
+  }, []);
 
   // Expand / Collapse Order Card
   const toggleOrderExpanded = (orderId) => {
