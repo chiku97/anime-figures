@@ -12,6 +12,7 @@ import {
   Gift,
   Mail
 } from 'lucide-react';
+import ProductImageSlider from '../components/ProductImageSlider.jsx';
 
 const Instagram = (props) => (
   <svg
@@ -359,13 +360,15 @@ const Landing = () => {
                   key={p.id || p._id}
                   className="card border border-primary/40 rounded-xl overflow-hidden p-4 text-left flex flex-col h-full bg-white shadow hover:shadow-lg transition-all"
                 >
-                  <div className="relative h-64 md:h-72 rounded-lg overflow-hidden bg-darker mb-4 border border-primary/30 flex items-center justify-center">
-                    <img
-                      src={p.images?.[0]}
+                  <div className="relative h-64 md:h-72 rounded-lg overflow-hidden bg-darker mb-4 border border-primary/30">
+                    <ProductImageSlider
+                      images={p.images}
                       alt={p.title}
-                      className="object-cover w-full h-full transform hover:scale-105 transition-transform duration-500"
+                      interval={2000}
+                      className="h-full w-full"
+                      imgClassName="object-cover w-full h-full"
                     />
-                    <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                    <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
                       {p.badges?.map((badge, idx) => (
                         <span
                           key={idx}
@@ -433,13 +436,15 @@ const Landing = () => {
                   key={p.id || p._id}
                   className="card border border-primary/40 rounded-xl overflow-hidden p-4 text-left flex flex-col h-full bg-white shadow hover:shadow-lg transition-all"
                 >
-                  <div className="relative h-64 md:h-72 rounded-lg overflow-hidden bg-darker mb-4 border border-primary/30 flex items-center justify-center">
-                    <img
-                      src={p.images?.[0]}
+                  <div className="relative h-64 md:h-72 rounded-lg overflow-hidden bg-darker mb-4 border border-primary/30">
+                    <ProductImageSlider
+                      images={p.images}
                       alt={p.title}
-                      className="object-cover w-full h-full transform hover:scale-105 transition-transform duration-500"
+                      interval={2000}
+                      className="h-full w-full"
+                      imgClassName="object-cover w-full h-full"
                     />
-                    <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
+                    <div className="absolute top-3 left-3 flex flex-wrap gap-1.5 z-10">
                       {p.badges?.map((badge, idx) => (
                         <span
                           key={idx}

@@ -6,6 +6,7 @@ import { addToCart } from '../store/cartSlice.js';
 import { addToast } from '../store/toastSlice.js';
 import { setLoginDrawerOpen } from '../store/authSlice.js';
 import apiClient from '../api/client.js';
+import ProductImageSlider from '../components/ProductImageSlider.jsx';
 
 const Catalog = () => {
   const dispatch = useDispatch();
@@ -430,11 +431,13 @@ const Catalog = () => {
                     key={p.id}
                     className="card border border-primary/40 rounded-xl p-4 flex flex-col justify-between text-left"
                   >
-                    <Link to={`/product/${p.slug}`} className="block relative h-56 rounded-lg overflow-hidden bg-darker mb-4 border border-primary/30 flex items-center justify-center">
-                      <img
-                        src={p.images?.[0]}
+                    <div className="relative h-56 rounded-lg overflow-hidden bg-darker mb-4 border border-primary/30">
+                      <ProductImageSlider
+                        images={p.images}
                         alt={p.title}
-                        className="object-cover w-full h-full transform group-hover:scale-105 transition-transform duration-500"
+                        interval={2000}
+                        className="h-full w-full"
+                        imgClassName="object-cover w-full h-full"
                       />
                       {/* Badges */}
                       <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
@@ -454,7 +457,7 @@ const Catalog = () => {
                           </span>
                         </div>
                       )}
-                    </Link>
+                    </div>
                     <div className="flex justify-between items-center mb-1 text-[10px] font-bold text-secondary uppercase">
                       <span>{p.category}</span>
                       <span className="px-1.5 py-0.5 rounded bg-primary/40 text-white">

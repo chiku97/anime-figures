@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { addToast } from '../../store/toastSlice.js';
 import apiClient from '../../api/client.js';
+import ProductImageSlider from '../../components/ProductImageSlider.jsx';
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
@@ -401,11 +402,19 @@ const AdminDashboard = () => {
                     {products.map((p) => (
                       <tr key={p.id || p._id} className="hover:bg-warm-white/40 transition-colors">
                         <td className="py-3 px-6">
-                          <div className="w-12 h-12 rounded bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center">
-                            {p.images && p.images[0] ? (
-                              <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover" />
+                          <div className="w-12 h-12 rounded bg-gray-100 border border-gray-200 overflow-hidden relative">
+                            {p.images && p.images.length > 0 ? (
+                              <ProductImageSlider
+                                images={p.images}
+                                alt={p.title}
+                                interval={2000}
+                                showControls={false}
+                                showDots={false}
+                                className="w-full h-full"
+                                imgClassName="object-cover w-full h-full"
+                              />
                             ) : (
-                              <Package className="w-5 h-5 text-gray-400" />
+                              <Package className="w-5 h-5 text-gray-400 m-auto mt-3" />
                             )}
                           </div>
                         </td>

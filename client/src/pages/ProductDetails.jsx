@@ -6,6 +6,7 @@ import { addToCart } from '../store/cartSlice.js';
 import { setLoginDrawerOpen } from '../store/authSlice.js';
 import { addToast } from '../store/toastSlice.js';
 import apiClient from '../api/client.js';
+import ProductImageSlider from '../components/ProductImageSlider.jsx';
 
 const ProductDetails = () => {
   const { idOrSlug } = useParams();
@@ -157,20 +158,29 @@ const ProductDetails = () => {
         {/* Details Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           
-          {/* Left: Product Images */}
+          {/* Left: Product Images Slider */}
           <div className="space-y-4">
-            <div className="card border border-primary/40 rounded-2xl overflow-hidden h-[350px] md:h-[500px] flex items-center justify-center p-4 bg-white">
-              <img 
-                src={product.images?.[0]} 
-                alt={product.title} 
-                className="object-contain max-h-full max-w-full rounded-lg"
+            <div className="card border border-primary/40 rounded-2xl overflow-hidden h-[350px] md:h-[500px] bg-white relative shadow-sm">
+              <ProductImageSlider
+                images={product.images}
+                alt={product.title}
+                interval={2000}
+                className="h-full w-full"
+                imgClassName="object-contain w-full h-full p-4"
               />
             </div>
-            <div className="flex gap-4">
-              <div className="w-20 h-20 card border-2 border-primary rounded-lg overflow-hidden p-1 flex items-center justify-center cursor-pointer bg-white">
-                <img src={product.images?.[0]} className="object-cover w-full h-full rounded" />
+            {product.images && product.images.length > 1 && (
+              <div className="flex gap-3 overflow-x-auto pb-1">
+                {product.images.map((imgUrl, i) => (
+                  <div
+                    key={i}
+                    className="w-16 h-16 sm:w-20 sm:h-20 card border-2 border-primary/30 hover:border-primary rounded-xl overflow-hidden p-1 flex items-center justify-center cursor-pointer bg-white shrink-0 transition-all"
+                  >
+                    <img src={imgUrl} alt={`${product.title} thumb ${i + 1}`} className="object-cover w-full h-full rounded-lg" />
+                  </div>
+                ))}
               </div>
-            </div>
+            )}
           </div>
 
           {/* Right: Specifications & CTA */}

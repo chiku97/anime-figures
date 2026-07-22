@@ -34,7 +34,11 @@ const offlineStore = {
       heightMm: 300,
       price: 4999,
       stock: 5,
-      images: ["https://images.unsplash.com/photo-1563089145-599997674d42?w=600&auto=format&fit=crop&q=80"],
+      images: [
+        "https://images.unsplash.com/photo-1563089145-599997674d42?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=600&auto=format&fit=crop&q=80"
+      ],
       badges: ["Best Seller", "Football"],
       status: "active"
     },
@@ -48,7 +52,11 @@ const offlineStore = {
       heightMm: 220,
       price: 2499,
       stock: 15,
-      images: ["https://images.unsplash.com/photo-1507608869274-d3177c8bb4c7?w=600&auto=format&fit=crop&q=80"],
+      images: [
+        "https://images.unsplash.com/photo-1507608869274-d3177c8bb4c7?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1517747614396-d242a3df8b05?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1551958219-acbc608c6377?w=600&auto=format&fit=crop&q=80"
+      ],
       badges: ["Fan Choice", "Football"],
       status: "active"
     },
@@ -62,7 +70,11 @@ const offlineStore = {
       heightMm: 240,
       price: 2799,
       stock: 10,
-      images: ["https://images.unsplash.com/photo-1635805737707-575885ab0820?w=600&auto=format&fit=crop&q=80"],
+      images: [
+        "https://images.unsplash.com/photo-1635805737707-575885ab0820?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1604200213928-ba3cf4fc8436?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&auto=format&fit=crop&q=80"
+      ],
       badges: ["New Arrival", "Superhero"],
       status: "active"
     },
@@ -76,7 +88,11 @@ const offlineStore = {
       heightMm: 230,
       price: 2699,
       stock: 8,
-      images: ["https://images.unsplash.com/photo-1546519638-68e109498ffc?w=600&auto=format&fit=crop&q=80"],
+      images: [
+        "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1519861531473-9200262188bf?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1579952318891-236a73819889?w=600&auto=format&fit=crop&q=80"
+      ],
       badges: ["Trending", "Basketball"],
       status: "active"
     },
@@ -90,7 +106,11 @@ const offlineStore = {
       heightMm: 200,
       price: 1999,
       stock: 8,
-      images: ["https://images.unsplash.com/photo-1508243754930-f4dcf1ab6274?w=600&auto=format&fit=crop&q=80"],
+      images: [
+        "https://images.unsplash.com/photo-1508243754930-f4dcf1ab6274?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1550684848-fac1c5b4e853?w=600&auto=format&fit=crop&q=80"
+      ],
       badges: ["Aesthetic", "Ambient"],
       status: "active"
     },
@@ -104,7 +124,10 @@ const offlineStore = {
       heightMm: 110,
       price: 899,
       stock: 20,
-      images: ["https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=600&auto=format&fit=crop&q=80"],
+      images: [
+        "https://images.unsplash.com/photo-1586495777744-4413f21062fa?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=600&auto=format&fit=crop&q=80"
+      ],
       badges: ["Utility", "Phone"],
       status: "active"
     },
@@ -118,7 +141,10 @@ const offlineStore = {
       heightMm: 60,
       price: 399,
       stock: 50,
-      images: ["https://images.unsplash.com/photo-1582139329536-e7284fece509?w=600&auto=format&fit=crop&q=80"],
+      images: [
+        "https://images.unsplash.com/photo-1582139329536-e7284fece509?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80"
+      ],
       badges: ["Customized", "Keychain"],
       status: "active"
     },
@@ -132,7 +158,11 @@ const offlineStore = {
       heightMm: 80,
       price: 1299,
       stock: 14,
-      images: ["https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80"],
+      images: [
+        "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1560343090-f0409e92791a?w=600&auto=format&fit=crop&q=80",
+        "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&auto=format&fit=crop&q=80"
+      ],
       badges: ["Car Decor", "Collectibles"],
       status: "active"
     }
