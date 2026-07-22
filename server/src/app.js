@@ -1105,12 +1105,15 @@ app.post('/api/products/:idOrSlug/reviews', requireAuth, async (req, res) => {
   }
 });
 
-// Create Razorpay Order
+// Create Razorpay Order (Full or Partial 10%)
 app.post('/api/payments/order', requireAuth, async (req, res) => {
-  const { amount } = req.body;
+  const { amount, paymentMethod = 'online' } = req.body;
   if (!amount) {
     return res.status(400).json({ success: false, message: 'Amount is required' });
   }
+
+  // Calculate charge amount: 10% for partial payment, 100% for full online payment
+  const payableAmount = paymentMethod === 'partial' ? Math.round(amount * 0.10) : Math.round(amount);
 
   const razorpayKeyId = process.env.RAZORPAY_KEY_ID;
   const razorpaySecret = process.env.RAZORPAY_KEY_SECRET;
@@ -1124,7 +1127,10 @@ app.post('/api/payments/order', requireAuth, async (req, res) => {
       success: true,
       isMock: true,
       id: mockOrderId,
-      amount: amount * 100, // Razorpay works in paise
+      amount: payableAmount * 100, // Razorpay works in paise
+      fullAmount: amount,
+      payableAmount: payableAmount,
+      paymentMethod: paymentMethod,
       currency: 'INR'
     });
   }
@@ -1136,9 +1142,14 @@ app.post('/api/payments/order', requireAuth, async (req, res) => {
     });
 
     const options = {
-      amount: Math.round(amount * 100), // in paise
+      amount: Math.round(payableAmount * 100), // in paise
       currency: 'INR',
-      receipt: 'rcpt_' + Date.now()
+      receipt: 'rcpt_' + Date.now(),
+      notes: {
+        paymentMethod,
+        fullAmount: amount.toString(),
+        payableAmount: payableAmount.toString()
+      }
     };
 
     const order = await razorpay.orders.create(options);
@@ -1147,6 +1158,9 @@ app.post('/api/payments/order', requireAuth, async (req, res) => {
       isMock: false,
       id: order.id,
       amount: order.amount,
+      fullAmount: amount,
+      payableAmount: payableAmount,
+      paymentMethod: paymentMethod,
       currency: order.currency
     });
   } catch (err) {
@@ -1156,15 +1170,18 @@ app.post('/api/payments/order', requireAuth, async (req, res) => {
       success: true,
       isMock: true,
       id: mockOrderId,
-      amount: amount * 100,
+      amount: payableAmount * 100,
+      fullAmount: amount,
+      payableAmount: payableAmount,
+      paymentMethod: paymentMethod,
       currency: 'INR'
     });
   }
 });
 
-// Verify payment & Save Order
+// Verify payment & Save Order (Supports Online 100% and Partial 10% payments)
 app.post('/api/payments/verify', requireAuth, async (req, res) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, address, cartItems, total } = req.body;
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, address, cartItems, total, paymentMethod = 'online' } = req.body;
 
   if (!razorpay_order_id || !razorpay_payment_id || !cartItems || !total) {
     return res.status(400).json({ success: false, message: 'Missing required verification details.' });
@@ -1187,6 +1204,21 @@ app.post('/api/payments/verify', requireAuth, async (req, res) => {
       }
     }
 
+    // Determine paid and due amounts based on payment method
+    let paidAmount = total;
+    let dueAmount = 0;
+    let paymentStatus = 'paid';
+
+    if (paymentMethod === 'partial') {
+      paidAmount = Math.round(total * 0.10);
+      dueAmount = total - paidAmount;
+      paymentStatus = 'partially_paid';
+    } else if (paymentMethod === 'cod') {
+      paidAmount = 0;
+      dueAmount = total;
+      paymentStatus = 'pending';
+    }
+
     const orderData = {
       items: cartItems.map(item => ({
         productId: mongoose.Types.ObjectId.isValid(item.id) ? item.id : new mongoose.Types.ObjectId(),
@@ -1195,8 +1227,11 @@ app.post('/api/payments/verify', requireAuth, async (req, res) => {
         title: item.title
       })),
       amount: total,
+      paidAmount: paidAmount,
+      dueAmount: dueAmount,
+      paymentMethod: paymentMethod,
+      paymentStatus: paymentStatus,
       razorpayOrderId: razorpay_order_id,
-      paymentStatus: 'paid',
       status: 'processing',
       shippingAddress: {
         name: address.name,
@@ -1204,7 +1239,9 @@ app.post('/api/payments/verify', requireAuth, async (req, res) => {
         city: address.city,
         state: address.state,
         zipCode: address.pincode,
-        phone: address.phone
+        phone: address.phone,
+        lat: address.lat || null,
+        lng: address.lng || null
       }
     };
 
@@ -1234,7 +1271,9 @@ app.post('/api/payments/verify', requireAuth, async (req, res) => {
             address2: address.address2 || '',
             pincode: address.pincode,
             city: address.city,
-            state: address.state
+            state: address.state,
+            lat: address.lat || null,
+            lng: address.lng || null
           });
         }
       }
@@ -1274,7 +1313,9 @@ app.post('/api/payments/verify', requireAuth, async (req, res) => {
             address2: address.address2 || '',
             pincode: address.pincode,
             city: address.city,
-            state: address.state
+            state: address.state,
+            lat: address.lat || null,
+            lng: address.lng || null
           });
           await user.save();
         }

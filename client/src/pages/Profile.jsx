@@ -257,9 +257,30 @@ const Profile = () => {
                       </div>
                     )}
 
-                    <div className="flex justify-between items-center border-t border-primary/10 pt-2 font-bold text-primary">
-                      <span>Paid: ₹{o.amount.toLocaleString('en-IN')}</span>
-                      <span className="text-accent uppercase text-[9px] tracking-wider">Paid via Razorpay</span>
+                    <div className="flex flex-col gap-1 border-t border-primary/10 pt-2 text-[11px] font-bold text-primary">
+                      <div className="flex justify-between items-center">
+                        {o.paymentMethod === 'partial' || o.paymentStatus === 'partially_paid' ? (
+                          <span>Advance Paid: ₹{(o.paidAmount || Math.round(o.amount * 0.10)).toLocaleString('en-IN')}</span>
+                        ) : o.paymentMethod === 'cod' ? (
+                          <span>Paid: ₹0</span>
+                        ) : (
+                          <span>Paid: ₹{(o.paidAmount || o.amount).toLocaleString('en-IN')}</span>
+                        )}
+                        <span className="text-accent uppercase text-[9px] tracking-wider font-extrabold">
+                          {o.paymentMethod === 'partial' || o.paymentStatus === 'partially_paid' 
+                            ? 'Partial (10% Advance)' 
+                            : o.paymentMethod === 'cod' 
+                              ? 'Cash On Delivery' 
+                              : 'Paid via Razorpay'}
+                        </span>
+                      </div>
+
+                      {(o.paymentMethod === 'partial' || o.paymentMethod === 'cod' || (o.dueAmount && o.dueAmount > 0)) && (
+                        <div className="flex justify-between items-center text-clay text-[10px]">
+                          <span>Balance Due on Delivery:</span>
+                          <span className="font-extrabold">₹{(o.dueAmount !== undefined ? o.dueAmount : (o.paymentMethod === 'cod' ? o.amount : o.amount - Math.round(o.amount * 0.10))).toLocaleString('en-IN')}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))

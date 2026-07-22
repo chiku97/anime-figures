@@ -35,10 +35,23 @@ const orderSchema = new mongoose.Schema({
     default: 'pending'
   },
   razorpayOrderId: String,
+  paymentMethod: {
+    type: String,
+    enum: ['online', 'partial'],
+    default: 'online'
+  },
   paymentStatus: {
     type: String,
-    enum: ['pending', 'paid', 'failed'],
+    enum: ['pending', 'paid', 'partially_paid', 'failed'],
     default: 'pending'
+  },
+  paidAmount: {
+    type: Number,
+    default: 0
+  },
+  dueAmount: {
+    type: Number,
+    default: 0
   },
   shippingAddress: {
     name: String,
@@ -46,7 +59,9 @@ const orderSchema = new mongoose.Schema({
     city: String,
     state: String,
     zipCode: String,
-    phone: String
+    phone: String,
+    lat: Number,
+    lng: Number
   },
   tracking: {
     carrier: String,

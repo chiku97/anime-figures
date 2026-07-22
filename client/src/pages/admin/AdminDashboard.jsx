@@ -534,10 +534,23 @@ const AdminDashboard = () => {
                           <ShoppingBag className="w-4 h-4" />
                         </div>
                         <div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-extrabold text-primary text-sm font-mono">#{oid.substring(0, 10)}...</span>
                             <span className={`px-2 py-0.5 border rounded-full text-[9px] font-extrabold uppercase tracking-wide ${getStatusColor(o.status)}`}>
                               {o.status}
+                            </span>
+                            <span className={`px-2 py-0.5 border rounded-full text-[9px] font-extrabold uppercase tracking-wide ${
+                              o.paymentMethod === 'partial' || o.paymentStatus === 'partially_paid'
+                                ? 'bg-accent/10 border-accent/30 text-accent'
+                                : o.paymentMethod === 'cod'
+                                  ? 'bg-clay/10 border-clay/30 text-clay'
+                                  : 'bg-green-500/10 border-green-500/30 text-green-700'
+                            }`}>
+                              {o.paymentMethod === 'partial' || o.paymentStatus === 'partially_paid'
+                                ? 'PARTIAL (10% ADVANCE)'
+                                : o.paymentMethod === 'cod'
+                                  ? 'FULL COD'
+                                  : 'ONLINE PAID'}
                             </span>
                           </div>
                           <p className="text-[11px] text-secondary mt-0.5">
@@ -550,6 +563,11 @@ const AdminDashboard = () => {
                         <div className="text-left md:text-right">
                           <p className="text-[10px] text-secondary uppercase font-bold tracking-wider">Total Value</p>
                           <p className="text-sm font-black text-clay">₹{o.amount.toLocaleString('en-IN')}</p>
+                          {(o.paymentMethod === 'partial' || o.paymentMethod === 'cod' || (o.dueAmount && o.dueAmount > 0)) && (
+                            <p className="text-[10px] text-clay font-extrabold">
+                              Due: ₹{(o.dueAmount !== undefined ? o.dueAmount : (o.paymentMethod === 'cod' ? o.amount : o.amount - Math.round(o.amount * 0.10))).toLocaleString('en-IN')}
+                            </p>
+                          )}
                         </div>
                         <div className="text-left md:text-right hidden sm:block">
                           <p className="text-[10px] text-secondary uppercase font-bold tracking-wider">Date</p>
@@ -579,8 +597,20 @@ const AdminDashboard = () => {
                                 <p className="font-bold">{o.shippingAddress.name}</p>
                                 <p className="text-secondary leading-relaxed">{o.shippingAddress.street}</p>
                                 <p className="text-secondary">{o.shippingAddress.city}, {o.shippingAddress.state} — {o.shippingAddress.zipCode}</p>
-                                <div className="flex items-center gap-1 text-[10px] font-mono text-secondary mt-2">
-                                  <Phone className="w-3.5 h-3.5" /> +91 {o.shippingAddress.phone}
+                                <div className="flex items-center justify-between gap-2 flex-wrap text-[10px] text-secondary mt-2">
+                                  <span className="flex items-center gap-1 font-mono">
+                                    <Phone className="w-3.5 h-3.5" /> +91 {o.shippingAddress.phone}
+                                  </span>
+                                  {o.shippingAddress.lat && o.shippingAddress.lng && (
+                                    <a
+                                      href={`https://www.google.com/maps?q=${o.shippingAddress.lat},${o.shippingAddress.lng}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-2 py-0.5 bg-accent/10 border border-accent/30 text-accent font-extrabold rounded flex items-center gap-1 hover:bg-accent/20 transition-all uppercase tracking-wider"
+                                    >
+                                      <MapPin className="w-3 h-3" /> Pin on Map ({o.shippingAddress.lat}, {o.shippingAddress.lng})
+                                    </a>
+                                  )}
                                 </div>
                               </div>
                             ) : (
