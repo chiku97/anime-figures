@@ -141,8 +141,11 @@ const MapPickerModal = ({ isOpen, onClose, onSelectLocation, initialCoords }) =>
       mapInstanceRef.current = null;
     }
 
-    const initialPos = position;
-    const map = L.map(mapContainerRef.current).setView(initialPos, 15);
+    const startPos = initialCoords?.lat && initialCoords?.lng
+      ? [initialCoords.lat, initialCoords.lng]
+      : position;
+
+    const map = L.map(mapContainerRef.current).setView(startPos, 15);
     mapInstanceRef.current = map;
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -150,11 +153,38 @@ const MapPickerModal = ({ isOpen, onClose, onSelectLocation, initialCoords }) =>
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
     }).addTo(map);
 
-    const marker = L.marker(initialPos, { draggable: true }).addTo(map);
+    const marker = L.marker(startPos, { draggable: true }).addTo(map);
     markerRef.current = marker;
 
     // Initial reverse geocode
-    reverseGeocode(initialPos[0], initialPos[1]);
+    reverseGeocode(startPos[0], startPos[1]);
+
+    // Automatically detect & default to User's Current GPS Location if no initial coordinates exist
+    if (!initialCoords?.lat || !initialCoords?.lng) {
+      if (navigator.geolocation) {
+        setLocatingGps(true);
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const gpsLat = pos.coords.latitude;
+            const gpsLng = pos.coords.longitude;
+            setPosition([gpsLat, gpsLng]);
+            if (mapInstanceRef.current) {
+              mapInstanceRef.current.setView([gpsLat, gpsLng], 16);
+            }
+            if (markerRef.current) {
+              markerRef.current.setLatLng([gpsLat, gpsLng]);
+            }
+            await reverseGeocode(gpsLat, gpsLng);
+            setLocatingGps(false);
+          },
+          (err) => {
+            console.warn('Auto GPS detection skipped/failed:', err.message);
+            setLocatingGps(false);
+          },
+          { enableHighAccuracy: true, timeout: 8000 }
+        );
+      }
+    }
 
     // Handle Marker Drag End
     marker.on('dragend', async () => {
@@ -189,26 +219,34 @@ const MapPickerModal = ({ isOpen, onClose, onSelectLocation, initialCoords }) =>
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in font-outfit">
-      <div className="bg-white border border-primary/30 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 sm:p-6 pt-16 sm:pt-24 pb-8 bg-black/70 backdrop-blur-md font-outfit overflow-y-auto">
+      <div className="bg-white border border-primary/30 rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[80vh] sm:max-h-[84vh] mt-2 sm:mt-6">
         {/* Modal Header */}
-        <div className="p-4 border-b border-primary/15 flex items-center justify-between bg-warm-white">
-          <div className="flex items-center gap-2">
-            <MapPin className="w-5 h-5 text-accent" />
-            <h3 className="text-sm font-extrabold uppercase tracking-wider text-primary">
-              Pick Delivery Location on Map
-            </h3>
+        <div className="px-4 py-3.5 sm:px-6 sm:py-4 border-b border-primary/15 flex items-center justify-between bg-warm-white shrink-0 sticky top-0 z-30">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-accent/15 border border-accent/30 flex items-center justify-center text-accent shrink-0">
+              <MapPin className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-xs sm:text-sm font-black uppercase tracking-wider text-primary text-left">
+                Pick Delivery Location on Map
+              </h3>
+              <p className="text-[10px] text-secondary font-medium text-left">
+                Pin your address to auto-fill street, city & pincode
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1 rounded-full text-secondary hover:text-primary hover:bg-gray-200 transition-colors"
+            aria-label="Close modal"
+            className="p-2 rounded-full text-secondary hover:text-primary hover:bg-black/10 bg-white border border-primary/20 shadow-sm transition-all shrink-0 ml-2"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Search & Action Bar */}
-        <div className="p-4 bg-white border-b border-primary/10 space-y-3">
+        <div className="p-3.5 sm:p-4 bg-white border-b border-primary/10 space-y-2.5 shrink-0">
           <form onSubmit={handleSearch} className="flex gap-2">
             <div className="relative flex-1">
               <input
@@ -216,14 +254,14 @@ const MapPickerModal = ({ isOpen, onClose, onSelectLocation, initialCoords }) =>
                 placeholder="Search city, area, landmark or street name..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 border border-primary/30 rounded-xl text-xs bg-warm-white focus:outline-none focus:border-accent text-primary font-semibold"
+                className="w-full pl-9 pr-4 py-2 border border-primary/30 rounded-xl text-xs bg-warm-white focus:outline-none focus:border-accent text-primary font-semibold shadow-inner"
               />
               <Search className="w-4 h-4 text-secondary absolute left-3 top-2.5" />
             </div>
             <button
               type="submit"
               disabled={searching}
-              className="px-4 py-2 bg-primary hover:bg-opacity-95 text-white font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-all disabled:opacity-50"
+              className="px-4 py-2 bg-primary hover:bg-opacity-95 text-white font-bold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 shrink-0 transition-all disabled:opacity-50 shadow-sm"
             >
               {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
             </button>
@@ -234,60 +272,60 @@ const MapPickerModal = ({ isOpen, onClose, onSelectLocation, initialCoords }) =>
               type="button"
               onClick={handleUseGps}
               disabled={locatingGps}
-              className="px-3.5 py-1.5 bg-accent/10 border border-accent/30 text-accent font-extrabold rounded-lg hover:bg-accent/20 transition-all flex items-center gap-1.5 text-[11px] disabled:opacity-50"
+              className="px-3.5 py-1.5 bg-accent/10 border border-accent/30 text-accent font-extrabold rounded-lg hover:bg-accent/20 transition-all flex items-center gap-1.5 text-[11px] disabled:opacity-50 shadow-sm"
             >
               {locatingGps ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Navigation className="w-3.5 h-3.5" />}
               Use My Current GPS Location
             </button>
             <p className="text-[10px] text-secondary font-bold">
-              💡 Tip: Click anywhere on map or drag the pin to position your delivery spot.
+              💡 Drag pin or click map to move position.
             </p>
           </div>
         </div>
 
         {/* Map Container */}
-        <div className="relative flex-1 min-h-[320px] w-full bg-gray-100">
-          <div ref={mapContainerRef} className="h-full w-full min-h-[320px] z-10" />
+        <div className="relative flex-1 min-h-[220px] sm:min-h-[260px] max-h-[340px] w-full bg-gray-100 overflow-hidden">
+          <div ref={mapContainerRef} className="h-full w-full min-h-[220px] sm:min-h-[260px] z-10" />
           {resolving && (
-            <div className="absolute top-3 left-3 z-20 bg-white/90 backdrop-blur px-3 py-1.5 rounded-lg border border-primary/20 shadow text-xs font-bold text-primary flex items-center gap-2">
+            <div className="absolute top-3 left-3 z-20 bg-white/95 backdrop-blur px-3 py-1.5 rounded-lg border border-primary/20 shadow-md text-xs font-bold text-primary flex items-center gap-2">
               <Loader2 className="w-4 h-4 text-accent animate-spin" />
               Resolving address details...
             </div>
           )}
         </div>
 
-        {/* Selected Address Preview Footer */}
+        {/* Selected Address Preview & Footer Actions */}
         {addressDetails && (
-          <div className="p-4 border-t border-primary/15 bg-warm-white space-y-3">
+          <div className="p-3.5 sm:px-6 sm:py-4 border-t border-primary/15 bg-warm-white space-y-3 shrink-0 sticky bottom-0 z-30 shadow-lg">
             <div className="text-left text-xs space-y-1 bg-white p-3 rounded-xl border border-primary/20 shadow-sm">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-2">
                 <span className="font-extrabold text-primary uppercase text-[10px] tracking-wider">
                   Detected Location:
                 </span>
-                <span className="font-mono text-[10px] text-secondary font-bold">
+                <span className="font-mono text-[10px] text-secondary font-bold shrink-0">
                   📍 {addressDetails.lat}, {addressDetails.lng}
                 </span>
               </div>
-              <p className="font-bold text-primary text-xs leading-relaxed">
+              <p className="font-bold text-primary text-xs leading-relaxed line-clamp-2">
                 {addressDetails.address1}
               </p>
-              <p className="text-secondary text-[11px] font-semibold">
+              <p className="text-secondary text-[11px] font-semibold truncate">
                 {addressDetails.city}{addressDetails.state ? `, ${addressDetails.state}` : ''} {addressDetails.pincode ? `— ${addressDetails.pincode}` : ''}
               </p>
             </div>
 
-            <div className="flex justify-end gap-3">
+            <div className="flex items-center justify-end gap-3 pt-1">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-5 py-2.5 border border-primary/40 text-secondary hover:text-primary rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
+                className="px-5 py-2.5 border border-primary/40 text-secondary hover:text-primary hover:bg-white rounded-xl text-xs font-bold uppercase tracking-wider transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={handleConfirm}
-                className="px-6 py-2.5 bg-primary hover:bg-opacity-95 text-white font-extrabold rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 transition-all shadow"
+                className="px-6 py-2.5 bg-primary hover:bg-opacity-95 text-white font-black rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all shadow-md active:scale-95"
               >
                 <Check className="w-4 h-4" />
                 Confirm & Fill Address
